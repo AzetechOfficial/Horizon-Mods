@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="PASTE-YOUR-IMAGE-LINK-OR-FILE-NAME-HERE" alt="Horizon Mods banner" width="100%">
+  <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQBupm1tw4TmHQyDlglFPfNEitW8FWiH1kOOL_aE1izrQ&s=10" alt="Horizon Mods banner" width="100%">
 </p>
 
 <h1 align="center">Horizon-Mods</h1>
