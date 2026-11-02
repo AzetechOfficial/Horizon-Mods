@@ -13,6 +13,16 @@ pub fn take() -> Vec<(String, Vec<u8>)> {
     QUEUE.lock().map(|mut q| std::mem::take(&mut *q)).unwrap_or_default()
 }
 
+/// A voice chat message that came as a Horizon mod message, for the tick to
+/// read with the others.
+pub fn queue(channel: &str, data: &[u8]) {
+    if let Ok(mut q) = QUEUE.lock()
+        && q.len() < 4096
+    {
+        q.push((channel.to_owned(), data.to_vec()));
+    }
+}
+
 /// The game server's IP for an address as typed (`host[:port]`).
 pub fn resolve(address: &str) -> Option<std::net::IpAddr> {
     let (host, port) = crate::servers::parse_address(address)?;

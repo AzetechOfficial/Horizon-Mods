@@ -38,11 +38,7 @@ fn voicechat_key(game: &mut crate::game::Game<'_>, key: &str, pressed: bool) {
         }
     } else if key == game.native_mod_key(m::ID, m::DISABLE[0], m::DISABLE[2]) {
         let (off, out) = voicechat_engine::toggle_disabled();
-        for (channel, data) in out {
-            game.send(horizon_protocol::packets::play::Serverbound::CustomPayload(
-                horizon_protocol::packets::configuration::CustomPayload { channel, data },
-            ));
-        }
+        m::send(game, out);
         if announce {
             game.native_chat(if off {
                 "Complex Voice Chat: OFF (you hear nobody and nobody hears you)"

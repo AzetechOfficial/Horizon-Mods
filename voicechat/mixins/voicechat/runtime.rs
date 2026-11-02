@@ -5,8 +5,8 @@
 
 pub const ID: &str = "voicechat";
 pub const NAME: &str = "Complex Voice Chat";
-pub const VERSION: &str = "2.0.0";
-pub const DESCRIPTION: &str = "Proximity voice chat with groups, for servers with the Simple Voice Chat plugin (2.6.x). V opens the menu: Players (who's talking, each one's volume and mute), Groups (make one with a name, password and type, join or leave), Audio (microphone, speakers, volumes), Talking (push to talk or voice activation, the level meter, a microphone test) and Customize (theme, opacity, size, animations, mic icon colour, the on-screen status's style, corner and size). Hold Caps Lock to talk, M mutes, J turns voice chat off.";
+pub const VERSION: &str = "2.1.0";
+pub const DESCRIPTION: &str = "Proximity voice chat with groups, for Horizon servers with voice chat and servers with the Simple Voice Chat plugin (2.6.x). V opens the menu: Players (who's talking, each one's volume and mute), Groups (make one with a name, password and type, join or leave), Audio (microphone, speakers, volumes), Talking (push to talk or voice activation, the level meter, a microphone test) and Customize (theme, opacity, size, animations, mic icon colour, the on-screen status's style, corner and size). Hold Caps Lock to talk, M mutes, J turns voice chat off.";
 
 pub const PUSH_TO_TALK: [&str; 3] = ["push_to_talk", "Push to talk", "key.keyboard.caps.lock"];
 pub const MUTE: [&str; 3] = ["mute", "Mute microphone", "key.keyboard.m"];
@@ -283,6 +283,25 @@ pub const WHITE: u32 = 0xFFFFFF;
 pub const PAD: f32 = 3.0;
 pub const LINE: f32 = 10.0;
 
+/// Sends voice chat's messages to the server. A Horizon server carries a
+/// native mod's messages on its own channel (the voice chat server is a native
+/// mod there); any other server gets them as plugin messages, as Simple Voice
+/// Chat expects.
+pub(super) fn send(game: &mut crate::game::Game<'_>, out: Vec<voicechat_engine::Payload>) {
+    let horizon = game.remote.as_ref().is_some_and(|r| r.mod_net);
+    for (channel, data) in out {
+        if !horizon {
+            game.send(horizon_protocol::packets::play::Serverbound::CustomPayload(
+                horizon_protocol::packets::configuration::CustomPayload { channel, data },
+            ));
+        } else if channel.starts_with("voicechat:")
+            && let Err(e) = game.native_net_send_to_server(&channel, &data)
+        {
+            log::debug!("Voice chat: {channel} not sent: {e}");
+        }
+    }
+}
+
 /// Applies the menu's clicks, then gives it the state to show.
 pub(super) fn sync_menu(game: &mut crate::game::Game<'_>) {
     use horizon_client::options_ui::voicechat_menu::{Action, GroupRow, PlayerRow, View};
@@ -320,11 +339,7 @@ pub(super) fn sync_menu(game: &mut crate::game::Game<'_>) {
             }
         }
     }
-    for (channel, data) in out {
-        game.send(horizon_protocol::packets::play::Serverbound::CustomPayload(
-            horizon_protocol::packets::configuration::CustomPayload { channel, data },
-        ));
-    }
+    send(game, out);
     if s != before {
         set_settings(s.clone());
         for (key, value) in s.stored() {

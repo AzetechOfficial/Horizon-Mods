@@ -13,7 +13,7 @@ fn voicechat_tick(game: &mut crate::game::Game<'_>) {
         m::settings(|k| game.native_setting(m::ID, k))
     };
     let server = match (&game.remote, &game.player) {
-        (Some(r), Some(_)) if on && r.session.address != "local" => Some((r.session.address.clone(), r.profile())),
+        (Some(r), Some(_)) if on && r.joined && r.session.address != "local" => Some((r.session.address.clone(), r.profile())),
         _ => None,
     };
     let mut out: Vec<voicechat_engine::Payload> = Vec::new();
@@ -30,11 +30,7 @@ fn voicechat_tick(game: &mut crate::game::Game<'_>) {
             out.extend(voicechat_engine::payload(&channel, &data));
         }
     }
-    for (channel, data) in out {
-        game.send(horizon_protocol::packets::play::Serverbound::CustomPayload(
-            horizon_protocol::packets::configuration::CustomPayload { channel, data },
-        ));
-    }
+    m::send(game, out);
     if let Some(p) = game.native_player() {
         let remote = game.remote.as_ref();
         voicechat_engine::update_listener([p.x, p.y, p.z], p.yaw, |uuid| {

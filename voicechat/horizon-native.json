@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "id": "voicechat",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "game": "26.3",
   "horizon": "07b7ea30d02973e7bc7579ea1e914dac2a9eca01",
   "mixins": "d9c83d7096b7ea5b83678da2efdfd6161f74997e"

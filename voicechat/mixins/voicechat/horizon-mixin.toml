@@ -1,6 +1,6 @@
 [mod]
 id = "voicechat"
-version = "2.0.0"
+version = "2.1.0"
 priority = 100
 
 # The commit it was made on, the same one as the other bundles: they build together.
@@ -29,6 +29,17 @@ helper = "intercept.rs"
 bindings = [
   { name = "frame", ty = "&[u8]", value = "&frame" },
   { name = "threshold", ty = "Option<usize>", value = "threshold" },
+]
+
+# On a Horizon server the same messages come as mod messages.
+[[injection]]
+id = "net"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_net_from_server"
+helper = "net.rs"
+bindings = [
+  { name = "channel", ty = "&str", value = "channel" },
+  { name = "data", ty = "&[u8]", value = "data" },
 ]
 
 # Keys, settings and connection bookkeeping.
