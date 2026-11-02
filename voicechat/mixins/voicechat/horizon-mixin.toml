@@ -1,0 +1,181 @@
+[mod]
+id = "voicechat"
+version = "2.0.0"
+priority = 100
+
+# The commit it was made on, the same one as the other bundles: they build together.
+[compatibility]
+horizon_revision = "07b7ea30d02973e7bc7579ea1e914dac2a9eca01"
+
+# Protocol, Opus (bundled libopus 1.5.2), UDP and audio.
+[[crate]]
+id = "engine"
+path = "engine"
+
+# Voice chat's plugin messages, taken from the packet stream for the tick.
+[[module]]
+id = "payloads"
+file = "crates/horizon-protocol/src/frame.rs"
+name = "voicechat_payloads"
+source = "payloads.rs"
+visibility = "pub"
+
+[[injection]]
+id = "intercept"
+kind = "HEAD"
+cancellable = true
+target = "horizon_protocol::frame::decompress"
+helper = "intercept.rs"
+bindings = [
+  { name = "frame", ty = "&[u8]", value = "&frame" },
+  { name = "threshold", ty = "Option<usize>", value = "threshold" },
+]
+
+# Keys, settings and connection bookkeeping.
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "voicechat"
+source = "runtime.rs"
+
+[[injection]]
+id = "list"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_mods"
+helper = "list.rs"
+bindings = [
+  { name = "mods", ty = "&mut Vec<crate::game::native_hooks::NativeMod>", value = "&mut *mods" },
+]
+
+[[injection]]
+id = "settings"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_settings"
+helper = "settings.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "mod_id", ty = "&str", value = "mod_id" },
+  { name = "buttons", ty = "&mut Vec<String>", value = "&mut *buttons" },
+]
+
+[[injection]]
+id = "click"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_settings_click"
+helper = "click.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "mod_id", ty = "&str", value = "mod_id" },
+  { name = "button", ty = "usize", value = "button" },
+]
+
+[[injection]]
+id = "keys"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_key"
+helper = "keys.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "key", ty = "&str", value = "key" },
+  { name = "pressed", ty = "bool", value = "pressed" },
+]
+
+[[injection]]
+id = "tick"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_tick"
+helper = "tick.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+[[injection]]
+id = "hud"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_hud"
+helper = "hud.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+  { name = "corners", ty = "&mut horizon_client::extras_hud::Corners", value = "&mut *corners" },
+]
+
+# Complex Voice Chat's menu (V): drawn on the Options screen's Credits page while
+# it's open, like Mod Menu's panel on the Mods page. Public, so the game
+# crate's hooks reach it as horizon_client::options_ui::voicechat_menu.
+[[module]]
+id = "menu"
+file = "crates/horizon-client-render/src/options_ui.rs"
+name = "voicechat_menu"
+source = "menu.rs"
+visibility = "pub"
+
+[[injection]]
+id = "menu_draw"
+kind = "HEAD"
+cancellable = true
+target = "horizon_client_render::options_ui::OptionsUi::draw"
+helper = "menu_draw.rs"
+bindings = [
+  { name = "options", ty = "&mut crate::options_ui::OptionsUi", value = "&mut *self" },
+  { name = "batch", ty = "&mut crate::hud::HudBatch", value = "&mut *batch" },
+  { name = "atlas", ty = "&crate::hud::HudAtlas", value = "atlas" },
+  { name = "cursor", ty = "(f32, f32)", value = "cursor" },
+]
+
+[[injection]]
+id = "menu_click"
+kind = "HEAD"
+cancellable = true
+target = "horizon_client_render::options_ui::OptionsUi::click"
+helper = "menu_click.rs"
+bindings = [
+  { name = "options", ty = "&mut crate::options_ui::OptionsUi", value = "&mut *self" },
+  { name = "x", ty = "f32", value = "x" },
+  { name = "y", ty = "f32", value = "y" },
+  { name = "size", ty = "(f32, f32)", value = "size" },
+  { name = "drag", ty = "bool", value = "drag" },
+  { name = "right", ty = "bool", value = "right" },
+]
+
+[[injection]]
+id = "menu_wheel"
+kind = "HEAD"
+cancellable = true
+target = "horizon_client_render::options_ui::OptionsUi::wheel"
+helper = "menu_wheel.rs"
+bindings = [
+  { name = "options", ty = "&mut crate::options_ui::OptionsUi", value = "&mut *self" },
+  { name = "amount", ty = "f32", value = "amount" },
+]
+
+[[injection]]
+id = "menu_key"
+kind = "HEAD"
+cancellable = true
+target = "horizon_client_render::options_ui::OptionsUi::key"
+helper = "menu_key.rs"
+bindings = [
+  { name = "options", ty = "&mut crate::options_ui::OptionsUi", value = "&mut *self" },
+  { name = "key", ty = "winit::keyboard::KeyCode", value = "key" },
+]
+
+[[injection]]
+id = "menu_type"
+kind = "HEAD"
+cancellable = true
+target = "horizon_client_render::options_ui::OptionsUi::type_text"
+helper = "menu_type.rs"
+bindings = [
+  { name = "options", ty = "&mut crate::options_ui::OptionsUi", value = "&mut *self" },
+  { name = "text", ty = "&str", value = "text" },
+]
+
+[[injection]]
+id = "frame"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_frame"
+helper = "frame.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
